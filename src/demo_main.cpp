@@ -23,7 +23,7 @@ int main(int argc, char** argv) {
   // Robot 1: Default configuration, purple.
   visualization_msgs::MarkerArray robot1;
   builder.SetNamespace("robot");
-  builder.SetFrameId("base_link");
+  builder.SetFrameId("world");
   builder.SetColor(0.33, 0.17, 0.45, 1);
   builder.Build(&robot1);
   marker_arr_pub.publish(robot1);
@@ -34,8 +34,8 @@ int main(int argc, char** argv) {
   builder.SetColor(0, 0, 0, 0);
 
   std::map<std::string, double> joint_positions;
-  joint_positions["torso_lift_joint"] = 0.1;
-  joint_positions["head_tilt_joint"] = 0.5;
+  joint_positions["left_arm_1_joint"] = -1.25;
+  joint_positions["left_arm_3_joint"] = -1.5;
   builder.SetJointPositions(joint_positions);
 
   geometry_msgs::Pose pose;

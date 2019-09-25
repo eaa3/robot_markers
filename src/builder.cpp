@@ -85,7 +85,7 @@ void Builder::Init() {
       geometry_msgs::Pose pose = ToGeometryPose(
           link_p->parent_joint->parent_to_joint_origin_transform);
       const std::string& parent_name = link_p->getParent()->name;
-      tf_graph_.Add(NodeName(name), RefFrame(NodeName(parent_name)),
+      tf_graph_.Add(name, RefFrame(parent_name),
                     Transform(pose));
     }
   }
@@ -107,8 +107,8 @@ void Builder::SetJointPositions(
     const geometry_msgs::TransformStamped& tf = transforms[i];
     transform_graph::Transform transform(tf.transform.translation,
                                          tf.transform.rotation);
-    tf_graph_.Add(NodeName(tf.child_frame_id),
-                  RefFrame(NodeName(tf.header.frame_id)), transform);
+    tf_graph_.Add(tf.child_frame_id,
+                  RefFrame(tf.header.frame_id), transform);
   }
 }
 
@@ -180,33 +180,35 @@ void Builder::Build(const std::set<std::string>& link_names,
 
   const std::string& root_name = model_.getRoot()->name;
 
-  tf_graph_.Add(NodeName(root_name), RefFrame(frame_id_), pose_);
+  tf_graph_.Add(root_name, RefFrame(frame_id_), pose_);
 
   std::vector<urdf::LinkSharedPtr> links;
   model_.getLinks(links);
   for (size_t i = 0; i < links.size(); ++i) {
+    
     const urdf::LinkSharedPtr& link_p = links[i];
     const std::string& name = link_p->name;
+
     if (!link_names.empty() && link_names.find(name) == link_names.end()) {
       continue;
     }
-
     if (!link_p->visual) {
       continue;
     }
 
     Marker marker;
     BuildMarker(*link_p, i, &marker);
+    
     transform_graph::Transform transform_out;
-    geometry_msgs::Pose visual_transform =
-        ToGeometryPose(link_p->visual->origin);
-    bool success =
-        tf_graph_.DescribePose(visual_transform, Source(NodeName(name)),
-                               Target(frame_id_), &transform_out);
+    geometry_msgs::Pose visual_transform = ToGeometryPose(link_p->visual->origin);
+
+    bool success = tf_graph_.DescribePose(visual_transform, Source(name), Target(frame_id_), &transform_out);
+
     if (!success) {
       ROS_ERROR("No transform from %s to %s!", frame_id_.c_str(), name.c_str());
       continue;
     }
+
     marker.pose = ToGeometryPose(transform_out);
     marker_array->markers.push_back(marker);
   }
